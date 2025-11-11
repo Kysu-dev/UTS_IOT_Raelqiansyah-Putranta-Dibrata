@@ -22,11 +22,5 @@ Project menggunakan Python dan MQTT untuk komunikasi dengan perangkat IoT.
 - Meng-handle koneksi MQTT
 - Menyimpan data sensor
 - Endpoint API sederhana
-- Mudah dikembangkan
 
----
 
-## Instalasi
-1. Clone repository
-```bash
-git clone https://github.com/Kysu-dev/UTS_IOT_Raelqiansyah-Putranta-Dibrata.git
