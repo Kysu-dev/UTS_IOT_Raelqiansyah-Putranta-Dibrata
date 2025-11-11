@@ -13,8 +13,7 @@ Project menggunakan Python dan MQTT untuk komunikasi dengan perangkat IoT.
 |------|-----------|
 | `app.py` | File utama untuk menjalankan server dan API |
 | `mqtt_subs.py` | File untuk subscribe dan handle data MQTT |
-| `requirements.txt` | List library Python yang dibutuhkan |
-| `venv/` | Virtual environment (tidak diikutkan di GitHub) |
+
 
 ---
 
