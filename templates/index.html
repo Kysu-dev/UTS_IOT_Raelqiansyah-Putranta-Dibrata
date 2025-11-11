@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard IoT (Real-Time)</title> 
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: #f0f2f5; color: #333; margin: 0; padding: 20px;
+        }
+        .container {
+            max-width: 1000px; margin: auto; background: #fff;
+            border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); padding: 30px;
+        }
+        h1 { color: #1a2b4d; border-bottom: 2px solid #eee; padding-bottom: 10px; }
+        h2 { color: #1a2b4d; margin-top: 40px; }
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        .stat-card {
+            background: #fdfdfd; border: 1px solid #e0e0e0;
+            padding: 25px; border-radius: 8px; text-align: center;
+        }
+        .stat-label { font-size: 16px; color: #555; margin-bottom: 10px; }
+        .stat-value { font-size: 40px; font-weight: bold; }
+        /* Warna Statistik */
+        #suhumax { color: #e74c3c; }
+        #suhumin { color: #3498db; }
+        #suhurata { color: #2ecc71; }
+        /* Warna Real-time */
+        #latest_suhu { color: #f39c12; }
+        #latest_humid { color: #1abc9c; }
+        #latest_lux { color: #9b59b6; }
+        #latest_time { font-size: 14px; color: #7f8c8d; margin-top: 10px; }
+        
+        .data-table-container { overflow-x: auto; }
+        .data-table {
+            width: 100%; border-collapse: collapse; background: #fff;
+            border-radius: 8px; overflow: hidden; box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+        .data-table th, .data-table td { padding: 12px 15px; text-align: left; border-bottom: 1px solid #ddd; }
+        .data-table th { background-color: #34495e; color: #ffffff; }
+        .data-table tbody tr:nth-child(even) { background-color: #f9f9f9; }
+        .data-table tbody tr:hover { background-color: #f1f1f1; }
+        .status { text-align: center; color: #777; font-style: italic; margin-top: 20px; font-size: 14px; }
+        .status.error { color: red; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Dashboard Sensor IoT</h1>
+        
+        <h2>Data Real-Time Terakhir</h2>
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-label">Suhu</div>
+                <div class="stat-value" id="latest_suhu">--</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Humidity</div>
+                <div class="stat-value" id="latest_humid">--</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Kecerahan</div>
+                <div class="stat-value" id="latest_lux">--</div>
+            </div>
+        </div>
+        <div id="latest_time" style="text-align:center; margin-top:-20px; margin-bottom: 30px;">--</div>
+        <h2>Statistik Keseluruhan</h2>
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-label">Suhu Maksimum</div>
+                <div class="stat-value" id="suhumax">--</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Suhu Minimum</div>
+                <div class="stat-value" id="suhumin">--</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Suhu Rata-rata</div>
+                <div class="stat-value" id="suhurata">--</div>
+            </div>
+        </div>
+
+        <h2>Data Event (Suhu & Humidity Max)</h2>
+        <div class="data-table-container">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>idx</th>
+                        <th>suhun</th>
+                        <th>humid</th>
+                        <th>kecerahan</th>
+                        <th>timestamp</th>
+                    </tr>
+                </thead>
+                <tbody id="events-table-body">
+                    <tr><td colspan="5" style="text-align:center;">Mengambil data...</td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <p class="status" id="status">Menghubungkan...</p>
+    </div>
+
+    <script>
+        async function fetchData() {
+            const statusEl = document.getElementById('status');
+            
+            try {
+                const response = await fetch('/api/data');
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const data = await response.json(); 
+
+                // Penanganan jika database kosong
+                if (data.message) {
+                    document.getElementById('latest_suhu').textContent = "--";
+                    document.getElementById('latest_humid').textContent = "--";
+                    document.getElementById('latest_lux').textContent = "--";
+                    document.getElementById('latest_time').textContent = "Belum ada data";
+
+                    document.getElementById('suhumax').textContent = "--";
+                    document.getElementById('suhumin').textContent = "--";
+                    document.getElementById('suhurata').textContent = "--";
+                    
+                    document.getElementById('events-table-body').innerHTML = `<tr><td colspan="5" style="text-align:center;">${data.message}</td></tr>`;
+                    
+                    statusEl.textContent = "Menunggu data pertama...";
+                    return; 
+                }
+
+                // === PARSING DATA ===
+
+                // 1. Tampilkan Data Terbaru (Tambahan Anda)
+                if (data.data_terbaru && data.data_terbaru.suhu !== undefined) {
+                    document.getElementById('latest_suhu').textContent = data.data_terbaru.suhu + " °C";
+                    document.getElementById('latest_humid').textContent = data.data_terbaru.humidity + " %";
+                    document.getElementById('latest_lux').textContent = Math.round(data.data_terbaru.lux);
+                    document.getElementById('latest_time').textContent = "Timestamp: " + (new Date(data.data_terbaru.timestamp)).toLocaleString();
+                }
+
+                // 2. Tampilkan Statistik (Sesuai Soal)
+                document.getElementById('suhumax').textContent = data.suhumax;
+                document.getElementById('suhumin').textContent = data.suhumin;
+                document.getElementById('suhurata').textContent = data.suhurata;
+
+                // 3. Tampilkan Tabel Event (Sesuai Soal)
+                const tableBody = document.getElementById('events-table-body');
+                tableBody.innerHTML = ''; 
+
+                if (data.nilai_suhu_max_humid_max.length === 0) { 
+                    tableBody.innerHTML = '<tr><td colspan="5" style="text-align:center;">Tidak ada data event (suhu & humid max) yang ditemukan.</td></tr>';
+                } else {
+                    data.nilai_suhu_max_humid_max.forEach(event => {
+                        const row = document.createElement('tr');
+                        row.innerHTML = `
+                            <td>${event.idx}</td>
+                            <td>${event.suhun}</td>
+                            <td>${event.humid}</td>
+                            <td>${Math.round(event.kecerahan)}</td>
+                            <td>${event.timestamp}</td>
+                        `;
+                        tableBody.appendChild(row);
+                    });
+                }
+                
+                statusEl.textContent = "Last update: " + new Date().toLocaleTimeString();
+                statusEl.className = "status";
+
+            } catch (error) {
+                console.error('Gagal mengambil data:', error);
+                statusEl.textContent = "Gagal terhubung ke API. " + error.message;
+                statusEl.className = "status error";
+            }
+        }
+
+        fetchData();
+        setInterval(fetchData, 2000);
+    </script>
+</body>
+</html>
