@@ -91,6 +91,6 @@ def get_data():
 
 if __name__ == "__main__":
     print("Menjalankan Server Flask ")
-    print("Soal 2a) DI: http://127.0.0.1:5000/ ")
+    print("Akses JSON DI: http://127.0.0.1:5000/ ")
     print("(Soal 2) DI: http://127.0.0.1:5000/api/data")
     app.run(debug=True)
